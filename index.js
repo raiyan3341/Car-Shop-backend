@@ -1,5 +1,5 @@
 // ===========================================
-// index.js: Full Backend Server with Cancellation Logic
+// index.js: Full Backend Server for Car Rental (FINAL FIXES APPLIED)
 // ===========================================
 const express = require('express');
 const cors = require('cors');
@@ -35,7 +35,7 @@ admin.initializeApp({
 
 // 1. MIDDLEWARE SETUP
 const allowedOrigins = [
-    'http://localhost:5174', // Your React App URL
+    'http://localhost:5173', // Your React App URL
 ];
 
 app.use(cors({
@@ -187,11 +187,20 @@ async function run() {
             res.send(result);
         });
         
+        // ===========================================
+        // FIX: Car Update Route (PATCH /cars/:id)
+        // ===========================================
         app.patch('/cars/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const updatedCarData = req.body;
             const userEmail = req.decoded.email;
             
+            // 1. ID Validation Check
+            if (!ObjectId.isValid(id)) {
+                console.error(`Invalid ID detected in PATCH: ${id}`);
+                return res.status(400).send({ message: "Invalid Car ID format." });
+            }
+
             try {
                 const query = { _id: new ObjectId(id) };
                 const car = await carsCollection.findOne(query);
@@ -207,19 +216,30 @@ async function run() {
                 delete updatedCarData.providerEmail;
                 delete updatedCarData.providerName;
                 
+                // ✅ FINAL FIX: Update ডেটা থেকে _id ফিল্ডটি মুছে দিন
+                delete updatedCarData._id; 
+                
                 const updateDoc = {
                     $set: {
                         ...updatedCarData,
-                        rentPrice: parseFloat(updatedCarData.rentPrice),
+                        // 2. Safe Parsing Fix: If rentPrice is missing/empty string, it uses 0
+                        rentPrice: updatedCarData.rentPrice 
+                            ? parseFloat(updatedCarData.rentPrice) 
+                            : 0,
                     },
                 };
 
                 const result = await carsCollection.updateOne(query, updateDoc);
                 res.send(result);
+                
             } catch (error) {
+                // 3. Log actual error for better diagnosis
+                console.error("PATCH Car Update Error (DB Query/Data Issue):", error.message);
                 res.status(400).send({ message: "Invalid Car ID format or update error." });
             }
         });
+        // ===========================================
+
 
         app.delete('/cars/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
@@ -317,12 +337,11 @@ async function run() {
                     }
                 }
             ]).toArray();
-
             res.send(result);
         });
         
-        // ===========================================
-        // NEW: DELETE BOOKING ROUTE
+        // ======================================
+        // DELETE BOOKING ROUTE
         // ===========================================
         app.delete('/booking/:id', verifyToken, async (req, res) => {
             const bookingId = req.params.id;
