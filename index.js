@@ -5,29 +5,30 @@ require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const admin = require('firebase-admin'); 
-
 const app = express();
 const port = process.env.PORT || 3011;
 
+const base64Key = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
 const uri = process.env.MONGO_URI; 
-const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_PATH;
 
-if (!serviceAccountPath) {
-    console.error("FATAL ERROR: FIREBASE_SERVICE_ACCOUNT_KEY_PATH is not set in .env");
+if (!base64Key) {
+    console.error("FATAL ERROR: FIREBASE_SERVICE_ACCOUNT_BASE64 is not set in environment.");
     process.exit(1);
 }
 
 let serviceAccount;
 try {
-    serviceAccount = require(serviceAccountPath); 
+    const jsonString = Buffer.from(base64Key, 'base64').toString('utf8');
+    serviceAccount = JSON.parse(jsonString); 
 } catch (error) {
-    console.error("Error reading Firebase service account file. Check FIREBASE_SERVICE_ACCOUNT_KEY_PATH in .env:", error.message);
+    console.error("Error decoding Firebase service account key from Base64:", error.message);
     process.exit(1);
 }
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
+
 
 const allowedOrigins = [
     'http://localhost:5173',
@@ -57,6 +58,7 @@ const verifyToken = async (req, res, next) =>{
     });
 };
 
+
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -75,9 +77,9 @@ async function run(){
         const database = client.db("CarRentalDB"); 
         carsCollection = database.collection("cars");
         bookingsCollection = database.collection("bookings");
-        await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. Connected to MongoDB!");
 
+        
         app.post('/auth/jwt', async (req, res) => {
             const { idToken } = req.body;
             
@@ -163,6 +165,7 @@ async function run(){
             const result = await carsCollection.insertOne(carToInsert);
             res.send(result);
         });
+
         app.get('/my-listings', verifyToken, async (req, res) =>{
             const providerEmail = req.decoded.email;
             
@@ -170,6 +173,7 @@ async function run(){
             const result = await carsCollection.find(query).toArray();
             res.send(result);
         });
+
         app.patch('/cars/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const updatedCarData = req.body;
@@ -252,7 +256,7 @@ async function run(){
                     return res.status(404).send({ message: "Booking failed: Car not found." });
                 }
 
-                if (car.providerEmail === userEmail) {
+                if (car.providerEmail === userEmail){
                     return res.status(400).send({ message: "Booking failed: You cannot book your own listing." });
                 }
 
@@ -260,7 +264,7 @@ async function run(){
                     return res.status(400).send({ message: "Booking failed: Car is already booked or unavailable." });
                 }
                 
-                const bookingToInsert = {
+                const bookingToInsert ={
                     ...bookingData,
                     carId: new ObjectId(carId), 
                     bookingDate: new Date(),
@@ -271,8 +275,8 @@ async function run(){
                 });
 
                 if (updateCarResult.modifiedCount === 0){
-                     await bookingsCollection.deleteOne({ _id: bookingResult.insertedId });
-                     return res.status(500).send({ message: "Booking failed: Could not update car status." });
+                       await bookingsCollection.deleteOne({ _id: bookingResult.insertedId });
+                       return res.status(500).send({ message: "Booking failed: Could not update car status." });
                 }
                 res.send({ success: true, bookingId: bookingResult.insertedId, carUpdate: updateCarResult });
 
@@ -339,9 +343,8 @@ async function run(){
             }
         });
         
-
+        
     } finally {
-
     }
 }
 run().catch(console.dir);
