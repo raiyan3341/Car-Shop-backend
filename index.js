@@ -1,6 +1,3 @@
-// ===========================================
-// index.js: Full Backend Server for Car Rental (FINAL FIXES APPLIED)
-// ===========================================
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -32,10 +29,8 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
-
-// 1. MIDDLEWARE SETUP
 const allowedOrigins = [
-    'http://localhost:5173', // Your React App URL
+    'http://localhost:5173',
 ];
 
 app.use(cors({
