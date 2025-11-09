@@ -40,11 +40,10 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// 2. JWT VERIFICATION MIDDLEWARE (Custom)
-const verifyToken = async (req, res, next) => {
+const verifyToken = async (req, res, next) =>{
     const token = req.cookies.token;
     
-    if (!token) {
+    if (!token){
         return res.status(401).send({ message: 'Unauthorized access: No token provided' });
     }
     
@@ -53,13 +52,11 @@ const verifyToken = async (req, res, next) => {
             console.error("Token verification failed:", err);
             return res.status(401).send({ message: 'Unauthorized access: Invalid token' });
         }
-        
         req.decoded = decoded; 
         next();
     });
 };
 
-// 3. MONGODB CONNECTION
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -71,19 +68,16 @@ const client = new MongoClient(uri, {
 let carsCollection;
 let bookingsCollection;
 
-async function run() {
+async function run(){
     try {
         await client.connect();
         
         const database = client.db("CarRentalDB"); 
         carsCollection = database.collection("cars");
         bookingsCollection = database.collection("bookings");
-
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. Connected to MongoDB!");
-
-
-        // 4. AUTH & JWT ROUTES
+        
         app.post('/auth/jwt', async (req, res) => {
             const { idToken } = req.body;
             
