@@ -119,11 +119,11 @@ async function run(){
             let query = {};
             let options = {};
             
-            if (search) {
+            if (search){
                 query.carName = { $regex: new RegExp(search, 'i') }; 
             }
             
-            if (limit && !search) {
+            if (limit && !search){
                 options.limit = parseInt(limit);
                 options.sort = { createdAt: -1 }; 
             }
@@ -132,12 +132,12 @@ async function run(){
             res.send(result);
         });
 
-        app.get('/cars/:id', async (req, res) => {
+        app.get('/cars/:id', async (req, res) =>{
             const id = req.params.id;
             try {
                 const query = { _id: new ObjectId(id) };
                 const car = await carsCollection.findOne(query);
-                if (!car) {
+                if (!car){
                     return res.status(404).send({ message: "Car not found." });
                 }
                 res.send(car);
@@ -146,14 +146,14 @@ async function run(){
             }
         });
 
-        app.post('/cars', verifyToken, async (req, res) => {
+        app.post('/cars', verifyToken, async (req, res) =>{
             const newCar = req.body;
             
             if (!newCar.providerEmail || !newCar.carName || !newCar.rentPrice) {
                  return res.status(400).send({ message: "Missing required fields." });
             }
 
-            const carToInsert = {
+            const carToInsert ={
                 ...newCar,
                 rentPrice: parseFloat(newCar.rentPrice),
                 status: 'Available',
