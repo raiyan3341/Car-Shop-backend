@@ -99,7 +99,7 @@ async function run(){
                 })
                 .send({ success: true, email, message: 'JWT cookie set successfully' });
                 
-            } catch (error) {
+            } catch (error){
                 console.error("Firebase/JWT verification failed:", error);
                 res.status(401).send({ message: 'Unauthorized: Invalid ID Token' });
             }
@@ -163,25 +163,19 @@ async function run(){
             const result = await carsCollection.insertOne(carToInsert);
             res.send(result);
         });
-        
-        app.get('/my-listings', verifyToken, async (req, res) => {
+        app.get('/my-listings', verifyToken, async (req, res) =>{
             const providerEmail = req.decoded.email;
             
             const query = { providerEmail: providerEmail };
             const result = await carsCollection.find(query).toArray();
             res.send(result);
         });
-        
-        // ===========================================
-        // FIX: Car Update Route (PATCH /cars/:id)
-        // ===========================================
         app.patch('/cars/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const updatedCarData = req.body;
             const userEmail = req.decoded.email;
             
-            // 1. ID Validation Check
-            if (!ObjectId.isValid(id)) {
+            if (!ObjectId.isValid(id)){
                 console.error(`Invalid ID detected in PATCH: ${id}`);
                 return res.status(400).send({ message: "Invalid Car ID format." });
             }
@@ -189,25 +183,20 @@ async function run(){
             try {
                 const query = { _id: new ObjectId(id) };
                 const car = await carsCollection.findOne(query);
-                
-                if (!car) {
+                if (!car){
                     return res.status(404).send({ message: "Car not found." });
                 }
-                
                 if (car.providerEmail !== userEmail) {
                     return res.status(403).send({ message: "Forbidden: You do not own this listing." });
                 }
                 
                 delete updatedCarData.providerEmail;
                 delete updatedCarData.providerName;
-                
-                // ✅ FINAL FIX: Update ডেটা থেকে _id ফিল্ডটি মুছে দিন
                 delete updatedCarData._id; 
                 
                 const updateDoc = {
                     $set: {
                         ...updatedCarData,
-                        // 2. Safe Parsing Fix: If rentPrice is missing/empty string, it uses 0
                         rentPrice: updatedCarData.rentPrice 
                             ? parseFloat(updatedCarData.rentPrice) 
                             : 0,
@@ -218,27 +207,24 @@ async function run(){
                 res.send(result);
                 
             } catch (error) {
-                // 3. Log actual error for better diagnosis
                 console.error("PATCH Car Update Error (DB Query/Data Issue):", error.message);
                 res.status(400).send({ message: "Invalid Car ID format or update error." });
             }
         });
-        // ===========================================
 
-
-        app.delete('/cars/:id', verifyToken, async (req, res) => {
+        app.delete('/cars/:id', verifyToken, async (req, res) =>{
             const id = req.params.id;
             const userEmail = req.decoded.email;
             
-            try {
+            try{
                 const query = { _id: new ObjectId(id) };
                 const car = await carsCollection.findOne(query);
                 
-                if (!car) {
+                if (!car){
                     return res.status(404).send({ message: "Car not found." });
                 }
                 
-                if (car.providerEmail !== userEmail) {
+                if (car.providerEmail !== userEmail){
                     return res.status(403).send({ message: "Forbidden: You do not own this listing." });
                 }
                 
@@ -249,9 +235,7 @@ async function run(){
             }
         });
 
-
-        // 6. BOOKING ROUTES 
-        app.post('/book', verifyToken, async (req, res) => {
+        app.post('/book', verifyToken, async (req, res) =>{
             const bookingData = req.body;
             const userEmail = req.decoded.email; 
             const { carId, userEmail: reqUserEmail } = bookingData;
@@ -282,16 +266,14 @@ async function run(){
                     bookingDate: new Date(),
                 };
                 const bookingResult = await bookingsCollection.insertOne(bookingToInsert);
-
                 const updateCarResult = await carsCollection.updateOne(carQuery, {
                     $set: { status: 'Booked' }
                 });
 
-                if (updateCarResult.modifiedCount === 0) {
+                if (updateCarResult.modifiedCount === 0){
                      await bookingsCollection.deleteOne({ _id: bookingResult.insertedId });
                      return res.status(500).send({ message: "Booking failed: Could not update car status." });
                 }
-                
                 res.send({ success: true, bookingId: bookingResult.insertedId, carUpdate: updateCarResult });
 
             } catch (error) {
@@ -300,7 +282,7 @@ async function run(){
             }
         });
 
-        app.get('/my-bookings', verifyToken, async (req, res) => {
+        app.get('/my-bookings', verifyToken, async (req, res) =>{
             const userEmail = req.decoded.email;
             
             const query = { userEmail: userEmail };
@@ -325,15 +307,11 @@ async function run(){
             res.send(result);
         });
         
-        // ======================================
-        // DELETE BOOKING ROUTE
-        // ===========================================
-        app.delete('/booking/:id', verifyToken, async (req, res) => {
+        app.delete('/booking/:id', verifyToken, async (req, res) =>{
             const bookingId = req.params.id;
             const userEmail = req.decoded.email;
             
             try {
-                // 1. Find booking and verify ownership
                 const bookingQuery = { _id: new ObjectId(bookingId), userEmail: userEmail };
                 const booking = await bookingsCollection.findOne(bookingQuery);
 
@@ -342,15 +320,12 @@ async function run(){
                 }
                 
                 const carId = booking.carId;
-                
-                // 2. Delete the booking record
                 const deleteResult = await bookingsCollection.deleteOne(bookingQuery);
 
                 if (deleteResult.deletedCount === 0) {
                     return res.status(500).send({ message: "Cancellation failed on database." });
                 }
                 
-                // 3. Update Car Status to 'Available'
                 const carUpdateResult = await carsCollection.updateOne(
                     { _id: carId },
                     { $set: { status: 'Available' } }
@@ -366,13 +341,11 @@ async function run(){
         
 
     } finally {
-        // Keeps the client connected
+
     }
 }
 run().catch(console.dir);
 
-
-// 7. BASE ROUTE & LISTENER
 app.get('/', (req, res) => {
     res.send('Car Rental Backend Server is Running!');
 });
