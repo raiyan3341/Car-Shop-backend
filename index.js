@@ -77,22 +77,20 @@ async function run(){
         bookingsCollection = database.collection("bookings");
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. Connected to MongoDB!");
-        
+
         app.post('/auth/jwt', async (req, res) => {
             const { idToken } = req.body;
             
-            if (!idToken) {
+            if (!idToken){
                 return res.status(400).send({ message: 'ID Token required' });
             }
             
-            try {
+            try{
                 const decodedToken = await admin.auth().verifyIdToken(idToken);
                 const email = decodedToken.email;
-                
                 const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, {
                     expiresIn: '7d', 
                 });
-                
                 res.cookie('token', token, {
                     httpOnly: true,
                     secure: process.env.NODE_ENV === 'production', 
@@ -107,7 +105,7 @@ async function run(){
             }
         });
 
-        app.post('/auth/logout', async (req, res) => {
+        app.post('/auth/logout', async (req, res) =>{
             res.clearCookie('token', {
                 maxAge: 0,
                 httpOnly: true,
@@ -116,8 +114,6 @@ async function run(){
             }).send({ success: true, message: 'Token cleared' });
         });
 
-
-        // 5. CAR CRUD ROUTES 
         app.get('/cars', async (req, res) => {
             const { limit, search } = req.query;
             let query = {};
