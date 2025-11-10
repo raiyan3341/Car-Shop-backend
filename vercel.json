@@ -8,6 +8,11 @@
   ],
   "routes": [
     {
+      "src": "/cars/?(.*)",
+      "dest": "index.js"
+    },
+
+    {
       "src": "/.*",
       "dest": "index.js"
     }
