@@ -32,7 +32,7 @@ admin.initializeApp({
 
 const allowedOrigins = [
     'http://localhost:5175',
-    'https://car-shop-frontend-knnd.vercel.app',
+    'https://nimble-genie-5d724a.netlify.app',
 ];
 
 app.use(cors({
