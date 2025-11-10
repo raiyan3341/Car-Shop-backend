@@ -32,6 +32,7 @@ admin.initializeApp({
 
 const allowedOrigins = [
     'http://localhost:5173',
+    'https://car-shop-frontend-knnd.vercel.app',
 ];
 
 app.use(cors({
