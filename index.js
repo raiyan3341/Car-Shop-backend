@@ -353,6 +353,8 @@ app.get('/', (req, res) => {
     res.send('Car Rental Backend Server is Running!');
 });
 
-app.listen(port, () => {
+/*app.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`);
-});
+});*/
+
+module.exports = app;
