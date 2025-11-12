@@ -32,7 +32,6 @@ admin.initializeApp({
 
 const allowedOrigins = [
     'http://localhost:5175',
-    'https://nimble-genie-5d724a.netlify.app',
 ];
 
 app.use(cors({
