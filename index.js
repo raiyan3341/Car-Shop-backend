@@ -32,6 +32,7 @@ admin.initializeApp({
 
 const allowedOrigins = [
     'http://localhost:5173',
+    'https://assignment-10-bb401.web.app',
 ];
 
 app.use(cors({
